@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Semaforómetro Digital</title>
+<style>
+  :root{
+    --azul:#0b3a67;
+    --azul2:#0e5a96;
+    --fondo:#f4f8fb;
+    --verde:#2fbd63;
+    --amarillo:#f6be2d;
+    --rojo:#ef3b3b;
+    --gris:#dfe8ef;
+    --texto:#17324d;
+    --blanco:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:linear-gradient(135deg,#dff4ff,#f8fbff 55%,#e8fff0);
+    color:var(--texto);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  }
+  .app{
+    width:min(520px,100%);
+    min-height:760px;
+    background:white;
+    border-radius:28px;
+    box-shadow:0 20px 60px rgba(11,58,103,.18);
+    overflow:hidden;
+    position:relative;
+  }
+  .top{
+    padding:20px 24px 8px;
+  }
+  .brand{
+    font-weight:800;
+    color:var(--azul);
+    letter-spacing:.5px;
+  }
+
+  .home-logo{
+    width:min(360px,88%);
+    display:block;
+    margin:0 auto 16px;
+  }
+  .screen{
+    display:none;
+    padding:26px;
+    min-height:690px;
+  }
+  .screen.active{display:flex;flex-direction:column}
+  .home{
+    text-align:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 15% 10%,#c5efff 0 70px,transparent 72px),
+      radial-gradient(circle at 90% 15%,#d0f8dd 0 80px,transparent 82px),
+      radial-gradient(circle at 10% 88%,#fff0bd 0 75px,transparent 77px),
+      #fff;
+  }
+  h1{
+    margin:10px 0 8px;
+    font-size:42px;
+    line-height:1.02;
+    color:var(--azul);
+  }
+  h2{
+    color:var(--azul);
+    font-size:28px;
+    margin:8px 0 18px;
+  }
+  h3{margin:0 0 12px}
+  p{line-height:1.45}
+  .subtitle{
+    font-size:20px;
+    font-weight:700;
+    margin:0 auto 24px;
+    max-width:420px;
+  }
+  .traffic{
+    width:140px;
+    margin:10px auto 22px;
+    background:#1d2c39;
+    border-radius:24px;
+    padding:16px;
+    display:grid;
+    gap:11px;
+    box-shadow:inset 0 -8px 0 rgba(0,0,0,.12);
+  }
+  .light{width:72px;height:72px;border-radius:50%;margin:auto;border:5px solid rgba(0,0,0,.2)}
+  .r{background:var(--rojo)} .y{background:var(--amarillo)} .g{background:var(--verde)}
+  .btn{
+    border:none;
+    border-radius:16px;
+    padding:16px 22px;
+    font-size:18px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.15s transform,.15s opacity;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:linear-gradient(90deg,var(--azul2),var(--azul));color:white}
+  .btn-green{background:linear-gradient(90deg,#3acb74,#249b54);color:white}
+  .btn-light{background:#e8eff5;color:var(--azul)}
+  .home .btn{margin-top:18px}
+  .note{font-size:12px;color:#667b8e;margin-top:18px}
+  .progress-wrap{margin-bottom:30px}
+  .progress-label{font-weight:700;text-align:center;margin-bottom:8px}
+  .progress{height:12px;border-radius:99px;background:#dce6ed;overflow:hidden}
+  .progress > div{height:100%;background:var(--verde);width:0%;transition:.25s}
+  .question{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .icon{
+    width:100px;height:100px;border-radius:50%;
+    background:#eaf6ff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:48px;margin:0 auto 18px;
+  }
+  .qtext{
+    text-align:center;
+    font-size:24px;
+    font-weight:800;
+    color:var(--azul);
+    margin-bottom:22px;
+  }
+  .options{display:grid;gap:12px}
+  .opt{
+    width:100%;
+    text-align:center;
+    background:#eef5fa;
+    color:var(--azul);
+    border:3px solid transparent;
+  }
+  .opt.selected{
+    border-color:var(--azul2);
+    background:#d9eefc;
+  }
+  .nav{
+    display:flex;gap:12px;margin-top:28px;
+  }
+  .nav .btn{flex:1}
+  .loading{
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+  }
+  .gear{font-size:84px;animation:spin 1.6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .dots{font-size:34px;letter-spacing:8px;color:#5f8fb8}
+  .result{
+    text-align:center;
+    justify-content:center;
+  }
+  .result-circle{
+    width:120px;height:120px;border-radius:50%;
+    margin:5px auto 12px;border:8px solid #111;
+  }
+  .badge{
+    display:inline-block;
+    padding:8px 22px;border-radius:99px;
+    color:white;font-size:28px;font-weight:900;margin-bottom:12px;
+  }
+  .result-card{
+    background:rgba(255,255,255,.72);
+    border-radius:18px;padding:18px;text-align:left;margin:12px 0 18px;
+  }
+  .tips{padding-left:20px}
+  .tips li{margin:8px 0}
+  .green-bg{background:linear-gradient(#dff8e7,#effdf3)}
+  .yellow-bg{background:linear-gradient(#fff3bf,#fffbea)}
+  .red-bg{background:linear-gradient(#ffdcdc,#fff0f0)}
+  .stats{
+    justify-content:flex-start;
+  }
+  .stats-grid{
+    display:grid;gap:14px;margin-top:12px
+  }
+  .stat{
+    display:flex;justify-content:space-between;align-items:center;
+    background:#f2f6f9;border-radius:16px;padding:16px 18px;font-size:20px;font-weight:700;
+  }
+  .dot{width:22px;height:22px;border-radius:50%;display:inline-block;margin-right:10px;vertical-align:-3px}
+  .small-actions{display:grid;gap:10px;margin-top:auto}
+  .footerline{
+    text-align:center;font-size:12px;color:#687d90;margin-top:16px
+  }
+  @media (max-width:560px){
+    body{padding:0;background:white}
+    .app{border-radius:0;min-height:100vh;box-shadow:none}
+    .screen{min-height:100vh}
+    h1{font-size:36px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section class="screen home active" id="home">
+    <div class="brand">PROYECTO DE 5TO AÑO</div>
+    <img class="home-logo" src="logo_colegio.png" alt="Logo del colegio Nueva Generación">
+    <h1>SEMÁFORO<br>DIGITAL</h1>
+    <div class="subtitle">¿Cómo es tu relación cotidiana con las pantallas?</div>
+    <div class="traffic" aria-label="Semáforo">
+      <div class="light r"></div><div class="light y"></div><div class="light g"></div>
+    </div>
+    <p>Respondé 5 preguntas y descubrí en qué color del semáforo estás.</p>
+    <button class="btn btn-green" onclick="startSurvey()">COMENZAR</button>
+    <div class="note">Actividad educativa y preventiva. No constituye un diagnóstico médico.</div>
+  </section>
+
+  <section class="screen" id="survey">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progressLabel">Pregunta 1 de 5</div>
+      <div class="progress"><div id="progressBar"></div></div>
+    </div>
+    <div class="question">
+      <div class="icon" id="qIcon">⏱️</div>
+      <div class="qtext" id="qText"></div>
+      <div class="options" id="options"></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-light" onclick="prevQuestion()">Volver</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Siguiente</button>
+    </div>
+  </section>
+
+  <section class="screen loading" id="loading">
+    <div class="gear">⚙️</div>
+    <h2>Analizando tus respuestas...</h2>
+    <div class="dots">•••</div>
+  </section>
+
+  <section class="screen result" id="result">
+    <div id="resultInner"></div>
+  </section>
+
+  <section class="screen stats" id="stats">
+    <div class="brand">RESULTADOS DEL STAND</div>
+    <h2>Participación acumulada</h2>
+    <div class="stats-grid">
+      <div class="stat"><span><span class="dot" style="background:#2fbd63"></span>Verdes</span><strong id="stGreen">0</strong></div>
+      <div class="stat"><span><span class="dot" style="background:#f6be2d"></span>Amarillos</span><strong id="stYellow">0</strong></div>
+      <div class="stat"><span><span class="dot" style="background:#ef3b3b"></span>Rojos</span><strong id="stRed">0</strong></div>
+      <div class="stat"><span>Total de encuestados</span><strong id="stTotal">0</strong></div>
+    </div>
+    <div class="small-actions">
+      <button class="btn btn-primary" onclick="startSurvey()">NUEVA ENCUESTA</button>
+      <button class="btn btn-light" onclick="downloadCSV()">DESCARGAR RESULTADOS CSV</button>
+      <button class="btn btn-light" onclick="resetStats()">REINICIAR CONTADORES</button>
+    </div>
+    <div class="footerline">Los resultados quedan guardados únicamente en este dispositivo.</div>
+  </section>
+
+</div>
+
+<script>
+const questions = [
+  {
+    icon:"⏱️",
+    text:"¿Cuántas horas diarias creés que le dedicás a las pantallas?",
+    options:[
+      {label:"Hasta 2 horas", value:"q1_0", score:0},
+      {label:"Entre 2 y 4 horas", value:"q1_1", score:1},
+      {label:"Más de 4 horas", value:"q1_2", score:2}
+    ]
+  },
+  {
+    icon:"💻",
+    text:"¿Trabajás o estudiás con dispositivos tecnológicos?",
+    options:[
+      {label:"Sí", value:"si"},
+      {label:"No", value:"no"}
+    ]
+  },
+  {
+    icon:"☕",
+    text:"¿Realizás pausas de desintoxicación tecnológica durante el día?",
+    options:[
+      {label:"Frecuentemente", value:"q3_0", score:0},
+      {label:"A veces", value:"q3_1", score:1},
+      {label:"Nunca", value:"q3_2", score:2}
+    ]
+  },
+  {
+    icon:"👓",
+    text:"¿Usás lentes o anteojos?",
+    options:[
+      {label:"Sí", value:"si"},
+      {label:"No", value:"no"}
+    ]
+  },
+  {
+    icon:"🌙",
+    text:"¿Has tenido episodios de alteración del sueño o dificultad para dormir?",
+    options:[
+      {label:"No", value:"q5_0", score:0},
+      {label:"A veces", value:"q5_1", score:1},
+      {label:"Sí", value:"q5_2", score:2}
+    ]
+  }
+];
+
+let current = 0;
+let answers = Array(questions.length).fill(null);
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function startSurvey(){
+  current = 0;
+  answers = Array(questions.length).fill(null);
+  renderQuestion();
+  showScreen("survey");
+}
+function renderQuestion(){
+  const q = questions[current];
+  document.getElementById("progressLabel").textContent = `Pregunta ${current+1} de ${questions.length}`;
+  document.getElementById("progressBar").style.width = `${((current+1)/questions.length)*100}%`;
+  document.getElementById("qIcon").textContent = q.icon;
+  document.getElementById("qText").textContent = q.text;
+  const wrap = document.getElementById("options");
+  wrap.innerHTML = "";
+  q.options.forEach((opt,idx)=>{
+    const b = document.createElement("button");
+    b.className = "btn opt" + (answers[current]?.index===idx ? " selected" : "");
+    b.textContent = opt.label;
+    b.onclick = () => {
+      answers[current] = {index:idx, ...opt};
+      renderQuestion();
+    };
+    wrap.appendChild(b);
+  });
+  const next = document.getElementById("nextBtn");
+  next.disabled = answers[current] === null;
+  next.style.opacity = next.disabled ? ".45" : "1";
+  next.textContent = current === questions.length-1 ? "Ver resultado" : "Siguiente";
+}
+function nextQuestion(){
+  if(answers[current]===null) return;
+  if(current < questions.length-1){
+    current++;
+    renderQuestion();
+  }else{
+    showScreen("loading");
+    setTimeout(calculateResult, 1200);
+  }
+}
+function prevQuestion(){
+  if(current===0){ showScreen("home"); return; }
+  current--;
+  renderQuestion();
+}
+
+function calculateResult(){
+  const q1 = answers[0].score || 0;
+  const q3 = answers[2].score || 0;
+  const q5 = answers[4].score || 0;
+  let score = q1 + q3 + q5;
+  let color = score <= 1 ? "green" : score <= 3 ? "yellow" : "red";
+
+  // Regla especial del proyecto:
+  if(q1===2 && q3===2) color = "red";
+
+  saveResult(color, score);
+  renderResult(color, score);
+  showScreen("result");
+}
+
+function personalizedNotes(){
+  const notes = [];
+  if(answers[0].score===2) notes.push("Tu tiempo diario de exposición a pantallas es elevado.");
+  if(answers[1].value==="si") notes.push("Parte de ese tiempo corresponde al trabajo o al estudio.");
+  if(answers[2].score===2) notes.push("No realizás pausas habitualmente durante el día.");
+  if(answers[2].score===1) notes.push("Hacés algunas pausas, pero podrían ser más frecuentes.");
+  if(answers[4].score===2) notes.push("Manifestaste dificultades de sueño.");
+  if(answers[4].score===1) notes.push("A veces tenés dificultades para dormir.");
+  if(answers[3].value==="si") notes.push("Usás lentes o anteojos.");
+  if(answers[3].value==="no") notes.push("No usás lentes o anteojos.");
+  return notes;
+}
+
+function renderResult(color, score){
+  const cfg = {
+    green:{
+      title:"VERDE", bg:"green-bg", circle:"#2fbd63", badge:"#249b54",
+      headline:"Tus hábitos muestran un buen equilibrio",
+      desc:"Tus respuestas indican que actualmente mantenés varios hábitos favorables frente al uso de pantallas.",
+      tips:["Seguí haciendo pausas.","Mirá objetos lejanos regularmente.","Mantené momentos del día sin pantallas."]
+    },
+    yellow:{
+      title:"AMARILLO", bg:"yellow-bg", circle:"#f6be2d", badge:"#e8a900",
+      headline:"Hay algunos hábitos para revisar",
+      desc:"Tus respuestas muestran algunas situaciones que podrían generar una exposición prolongada a las pantallas.",
+      tips:["Incorporá más pausas durante el día.","Prestá atención al tiempo de uso.","Evitá las pantallas inmediatamente antes de dormir."]
+    },
+    red:{
+      title:"ROJO", bg:"red-bg", circle:"#ef3b3b", badge:"#df2626",
+      headline:"Es momento de prestar atención",
+      desc:"Tus respuestas indican una combinación de hábitos que merece atención, como muchas horas frente a pantallas, pocas pausas o dificultades relacionadas con el descanso.",
+      tips:["Incorporá pausas durante el día.","Reducí el uso nocturno de pantallas.","Prestá atención a señales de cansancio visual y alteraciones del sueño."]
+    }
+  }[color];
+
+  const notes = personalizedNotes();
+  const result = document.getElementById("result");
+  result.className = `screen result active ${cfg.bg}`;
+  document.getElementById("resultInner").innerHTML = `
+    <div class="brand">TU RESULTADO</div>
+    <div class="result-circle" style="background:${cfg.circle}"></div>
+    <div class="badge" style="background:${cfg.badge}">${cfg.title}</div>
+    <h2>${cfg.headline}</h2>
+    <div class="result-card">
+      <p>${cfg.desc}</p>
+      ${notes.length ? `<h3>Según tus respuestas:</h3><ul class="tips">${notes.map(n=>`<li>${n}</li>`).join("")}</ul>` : ""}
+      <h3>Una recomendación para vos:</h3>
+      <ul class="tips">${cfg.tips.map(t=>`<li>${t}</li>`).join("")}</ul>
+    </div>
+    <button class="btn btn-primary" onclick="openStats()">FINALIZAR</button>
+    <div class="note">Resultado orientativo con fines educativos y preventivos. No constituye un diagnóstico médico.</div>
+  `;
+}
+
+function getData(){
+  return JSON.parse(localStorage.getItem("semaforoData") || '{"green":0,"yellow":0,"red":0,"records":[]}');
+}
+function saveResult(color, score){
+  const data = getData();
+  data[color] = (data[color]||0)+1;
+  data.records = data.records || [];
+  data.records.push({
+    fecha:new Date().toLocaleString(),
+    horas:answers[0].label,
+    trabajoEstudio:answers[1].label,
+    pausas:answers[2].label,
+    lentes:answers[3].label,
+    sueno:answers[4].label,
+    puntaje:score,
+    resultado:color==="green"?"Verde":color==="yellow"?"Amarillo":"Rojo"
+  });
+  localStorage.setItem("semaforoData", JSON.stringify(data));
+}
+function openStats(){
+  const d = getData();
+  document.getElementById("stGreen").textContent = d.green || 0;
+  document.getElementById("stYellow").textContent = d.yellow || 0;
+  document.getElementById("stRed").textContent = d.red || 0;
+  document.getElementById("stTotal").textContent = (d.green||0)+(d.yellow||0)+(d.red||0);
+  showScreen("stats");
+}
+function resetStats(){
+  if(confirm("¿Seguro que querés borrar todos los resultados guardados en este dispositivo?")){
+    localStorage.removeItem("semaforoData");
+    openStats();
+  }
+}
+function downloadCSV(){
+  const data = getData();
+  const rows = [["Fecha","Horas de pantalla","Trabajo/estudio con dispositivos","Pausas","Usa lentes","Dificultad para dormir","Puntaje","Resultado"]];
+  (data.records||[]).forEach(r=>rows.push([r.fecha,r.horas,r.trabajoEstudio,r.pausas,r.lentes,r.sueno,r.puntaje,r.resultado]));
+  const csv = rows.map(row=>row.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "resultados_semaforometro.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
