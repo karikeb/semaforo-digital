@@ -257,10 +257,9 @@
     </div>
     <div class="small-actions">
       <button class="btn btn-primary" onclick="startSurvey()">NUEVA ENCUESTA</button>
-      <button class="btn btn-light" onclick="downloadCSV()">DESCARGAR RESULTADOS CSV</button>
-      <button class="btn btn-light" onclick="resetStats()">REINICIAR CONTADORES</button>
+      <button class="btn btn-light" onclick="openStats()">ACTUALIZAR RESULTADOS</button>
     </div>
-    <div class="footerline">Los resultados quedan guardados únicamente en este dispositivo.</div>
+    <div class="footerline">Resultados generales guardados en la base de datos del proyecto.</div>
   </section>
 
 </div>
@@ -364,19 +363,25 @@ function prevQuestion(){
   renderQuestion();
 }
 
-function calculateResult(){
+async function calculateResult(){
   const q1 = answers[0].score || 0;
   const q3 = answers[2].score || 0;
   const q5 = answers[4].score || 0;
-  let score = q1 + q3 + q5;
+  const score = q1 + q3 + q5;
   let color = score <= 1 ? "green" : score <= 3 ? "yellow" : "red";
 
-  // Regla especial del proyecto:
   if(q1===2 && q3===2) color = "red";
 
-  saveResult(color, score);
+  const guardado = await saveResult(color, score);
   renderResult(color, score);
   showScreen("result");
+
+  if(!guardado){
+    document.getElementById("resultInner").insertAdjacentHTML(
+      "afterbegin",
+      '<div class="result-card" style="border:2px solid #ef3b3b"><strong>No pudimos guardar esta respuesta en la base de datos.</strong><br>El resultado igualmente se muestra. Avisale a un responsable del stand.</div>'
+    );
+  }
 }
 
 function personalizedNotes(){
@@ -433,50 +438,63 @@ function renderResult(color, score){
   `;
 }
 
-function getData(){
-  return JSON.parse(localStorage.getItem("semaforoData") || '{"green":0,"yellow":0,"red":0,"records":[]}');
-}
-function saveResult(color, score){
-  const data = getData();
-  data[color] = (data[color]||0)+1;
-  data.records = data.records || [];
-  data.records.push({
-    fecha:new Date().toLocaleString(),
-    horas:answers[0].label,
-    trabajoEstudio:answers[1].label,
-    pausas:answers[2].label,
-    lentes:answers[3].label,
-    sueno:answers[4].label,
-    puntaje:score,
-    resultado:color==="green"?"Verde":color==="yellow"?"Amarillo":"Rojo"
-  });
-  localStorage.setItem("semaforoData", JSON.stringify(data));
-}
-function openStats(){
-  const d = getData();
-  document.getElementById("stGreen").textContent = d.green || 0;
-  document.getElementById("stYellow").textContent = d.yellow || 0;
-  document.getElementById("stRed").textContent = d.red || 0;
-  document.getElementById("stTotal").textContent = (d.green||0)+(d.yellow||0)+(d.red||0);
-  showScreen("stats");
-}
-function resetStats(){
-  if(confirm("¿Seguro que querés borrar todos los resultados guardados en este dispositivo?")){
-    localStorage.removeItem("semaforoData");
-    openStats();
+async function saveResult(color, score){
+  const payload = {
+    horas_pantalla: answers[0].label,
+    trabajo_estudio: answers[1].label,
+    pausas: answers[2].label,
+    usa_lentes: answers[3].label,
+    alteracion_sueno: answers[4].label,
+    puntaje: score,
+    resultado: color==="green" ? "Verde" : color==="yellow" ? "Amarillo" : "Rojo"
+  };
+
+  try{
+    const response = await fetch("/api/encuesta", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    if(!response.ok){
+      console.error("Error al guardar la encuesta:", await response.text());
+      return false;
+    }
+
+    return true;
+  }catch(error){
+    console.error("No se pudo conectar con la API:", error);
+    return false;
   }
 }
-function downloadCSV(){
-  const data = getData();
-  const rows = [["Fecha","Horas de pantalla","Trabajo/estudio con dispositivos","Pausas","Usa lentes","Dificultad para dormir","Puntaje","Resultado"]];
-  (data.records||[]).forEach(r=>rows.push([r.fecha,r.horas,r.trabajoEstudio,r.pausas,r.lentes,r.sueno,r.puntaje,r.resultado]));
-  const csv = rows.map(row=>row.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
-  const blob = new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "resultados_semaforometro.csv";
-  a.click();
-  URL.revokeObjectURL(a.href);
+
+async function openStats(){
+  showScreen("stats");
+
+  document.getElementById("stGreen").textContent = "…";
+  document.getElementById("stYellow").textContent = "…";
+  document.getElementById("stRed").textContent = "…";
+  document.getElementById("stTotal").textContent = "…";
+
+  try{
+    const response = await fetch("/api/estadisticas", {cache:"no-store"});
+    if(!response.ok) throw new Error("Error HTTP " + response.status);
+
+    const data = await response.json();
+    const d = data.estadisticas;
+    const pct = (n) => d.total ? Math.round((n / d.total) * 100) : 0;
+
+    document.getElementById("stGreen").textContent = `${d.Verde} (${pct(d.Verde)}%)`;
+    document.getElementById("stYellow").textContent = `${d.Amarillo} (${pct(d.Amarillo)}%)`;
+    document.getElementById("stRed").textContent = `${d.Rojo} (${pct(d.Rojo)}%)`;
+    document.getElementById("stTotal").textContent = d.total;
+  }catch(error){
+    console.error("No se pudieron cargar las estadísticas:", error);
+    document.getElementById("stGreen").textContent = "Error";
+    document.getElementById("stYellow").textContent = "Error";
+    document.getElementById("stRed").textContent = "Error";
+    document.getElementById("stTotal").textContent = "Error";
+  }
 }
 </script>
 </body>
