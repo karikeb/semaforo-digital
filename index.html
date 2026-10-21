@@ -196,6 +196,22 @@
   .footerline{
     text-align:center;font-size:12px;color:#687d90;margin-top:16px
   }
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    display:none;align-items:center;justify-content:center;
+    padding:20px;z-index:9999;
+  }
+  .modal-backdrop.active{display:flex}
+  .confirm-box{
+    width:min(420px,100%);
+    background:white;border-radius:22px;padding:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,.28);
+    text-align:center;
+  }
+  .confirm-box h3{color:var(--rojo);font-size:24px;margin-bottom:10px}
+  .confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .btn-danger{background:var(--rojo);color:white}
+  .btn-danger:disabled{opacity:.5;cursor:not-allowed}
   @media (max-width:560px){
     body{padding:0;background:white}
     .app{border-radius:0;min-height:100vh;box-shadow:none}
@@ -258,10 +274,23 @@
     <div class="small-actions">
       <button class="btn btn-primary" onclick="startSurvey()">NUEVA ENCUESTA</button>
       <button class="btn btn-light" onclick="openStats()">ACTUALIZAR RESULTADOS</button>
+      <button class="btn btn-danger" onclick="openDeleteConfirm()">BORRAR TODOS LOS RESULTADOS</button>
     </div>
     <div class="footerline">Resultados generales guardados en la base de datos del proyecto.</div>
   </section>
 
+</div>
+
+<div class="modal-backdrop" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+  <div class="confirm-box">
+    <h3 id="deleteTitle">¿Borrar todos los resultados?</h3>
+    <p>Esta acción eliminará definitivamente todas las encuestas guardadas en la base de datos.</p>
+    <p><strong>No se puede deshacer.</strong></p>
+    <div class="confirm-actions">
+      <button class="btn btn-light" onclick="closeDeleteConfirm()">CANCELAR</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="deleteAllResults()">SÍ, BORRAR TODO</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -496,6 +525,40 @@ async function openStats(){
     document.getElementById("stTotal").textContent = "Error";
   }
 }
+
+function openDeleteConfirm(){
+  document.getElementById("deleteModal").classList.add("active");
+}
+
+function closeDeleteConfirm(){
+  document.getElementById("deleteModal").classList.remove("active");
+}
+
+async function deleteAllResults(){
+  const btn = document.getElementById("confirmDeleteBtn");
+  btn.disabled = true;
+  btn.textContent = "BORRANDO...";
+
+  try{
+    const response = await fetch("/api/borrar-resultados", { method:"DELETE" });
+    const data = await response.json().catch(()=>({}));
+
+    if(!response.ok){
+      throw new Error(data.error || "No se pudieron borrar los resultados");
+    }
+
+    closeDeleteConfirm();
+    await openStats();
+    alert("Todos los resultados fueron borrados correctamente.");
+  }catch(error){
+    console.error(error);
+    alert("No se pudieron borrar los resultados. Intentá nuevamente.");
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "SÍ, BORRAR TODO";
+  }
+}
+
 </script>
 </body>
 </html>
