@@ -1,0 +1,16 @@
+ARCHIVOS PARA CONECTAR SEMÁFORO DIGITAL CON NEON + VERCEL
+
+Estructura que debe quedar en GitHub:
+
+semaforo-digital/
+├── index.html
+├── logo_colegio.png
+├── package.json
+└── api/
+    ├── encuesta.js
+    └── estadisticas.js
+
+IMPORTANTE:
+- NO subir DATABASE_URL a GitHub.
+- DATABASE_URL se configura en Vercel > Project > Settings > Environment Variables.
+- Estos archivos todavía no modifican index.html. El siguiente paso será conectar la interfaz con /api/encuesta y /api/estadisticas.
